@@ -6,6 +6,12 @@ export type CostMode = 'api' | 'plus' | 'hybrid';
 
 export type TokenUnit = 'tokens' | 'k' | 'm';
 
+export type AccountType = 'Plus' | 'Pro' | 'Team' | 'API';
+
+export type AccountBillingMode = 'monthly' | 'daily';
+
+export type AssignedAccountModel = ModelId | 'gpt53' | 'mixed';
+
 export interface BasicSettings {
   period: PeriodType;
   customStartDate: string;
@@ -30,6 +36,22 @@ export interface AccountCosts {
   accountCount: number;
   plusMonthlyFeeUsd: number;
   rechargePerAccountUsd: number;
+}
+
+export interface AccountPeriod {
+  accountId: string;
+  accountName: string;
+  accountType: AccountType;
+  startDate: string;
+  endDate: string;
+  billingMode: AccountBillingMode;
+  monthlyFeeUsd: number;
+  rechargeUsd: number;
+  assignedModel: AssignedAccountModel;
+  usedInputTokens: number;
+  usedCachedInputTokens: number;
+  usedOutputTokens: number;
+  usedCodexCredits: number | null;
 }
 
 export interface InfraCosts {
@@ -61,6 +83,7 @@ export interface AppConfig {
   basic: BasicSettings;
   modelPrices: Record<ModelId, ModelPrice>;
   accountCosts: AccountCosts;
+  accountPeriods: AccountPeriod[];
   infraCosts: InfraCosts;
   usage: Record<ModelId, ModelUsage>;
   costMode: CostModeConfig;
@@ -87,6 +110,43 @@ export interface ModelCalculation {
   modelGrossMargin: number | null;
 }
 
+export interface PeriodRange {
+  periodStart: string;
+  periodEnd: string;
+}
+
+export interface AccountPeriodCalculation {
+  account: AccountPeriod;
+  activeDays: number;
+  activeMonths: number;
+  accountCostCny: number;
+  totalTokens: number;
+  standardCostUsd: number;
+  standardCostCny: number;
+  estimatedCodexCredits: number;
+  codexCreditsUsed: number;
+  utilizationRate: number | null;
+  saleAmountCny: number;
+  profitEstimateCny: number;
+  hasDateError: boolean;
+}
+
+export interface AccountPeriodSummary {
+  periodStart: string;
+  periodEnd: string;
+  activeAccountCount: number;
+  accountTotalCostCny: number;
+  totalActiveDays: number;
+  totalActiveMonths: number;
+  averageAccountCostCny: number | null;
+  accountProfitTotalCny: number;
+  averageAccountProfitCny: number | null;
+  averageUtilizationRate: number | null;
+  lowUtilizationAccountCount: number;
+  standardCostCny: number;
+  calculations: AccountPeriodCalculation[];
+}
+
 export interface CalculationResult {
   models: ModelCalculation[];
   standardCostUsd: number;
@@ -96,6 +156,7 @@ export interface CalculationResult {
   paymentFeeCny: number;
   riskBufferCostCny: number;
   accountTotalCostCny: number;
+  accountPeriodSummary: AccountPeriodSummary;
   fixedCostCny: number;
   standardCostComponentCny: number;
   accountCostComponentCny: number;

@@ -23,10 +23,10 @@ export default function AccountCostSettings({ accountCosts, accountTotalCostCny,
 
   return (
     <section className="panel p-4">
-      <h2 className="panel-title mb-4">Plus / Codex 账号成本</h2>
+      <h2 className="panel-title mb-4">Plus / Codex 账号成本默认值</h2>
       <div className="grid gap-4 md:grid-cols-3">
         <label className="space-y-1">
-          <span className="field-label">Plus 账号数量</span>
+          <span className="field-label">快速批量账号数量</span>
           <input className="input" type="number" step="1" value={accountCosts.accountCount} onChange={(event) => update('accountCount', toNumber(event.target.value))} />
         </label>
         <label className="space-y-1">
@@ -39,8 +39,9 @@ export default function AccountCostSettings({ accountCosts, accountTotalCostCny,
         </label>
       </div>
       <div className="mt-4 rounded-lg bg-slate-50 p-3 text-sm text-slate-700">
-        账号总成本：<strong className="text-slate-950">{formatCurrency(accountTotalCostCny)}</strong>
+        当前账号列表总成本：<strong className="text-slate-950">{formatCurrency(accountTotalCostCny)}</strong>
         <span className="ml-2 text-slate-500">汇率 {exchangeRate}</span>
+        <div className="mt-1 text-xs text-slate-500">这里保留为批量创建账号的默认值，最终成本以账号周期管理列表为准。</div>
       </div>
       <div className="mt-4 overflow-x-auto">
         <table className="min-w-full text-left text-sm">

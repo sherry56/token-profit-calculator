@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import BasicSettings from './components/BasicSettings';
 import ModelPriceSettings from './components/ModelPriceSettings';
 import AccountCostSettings from './components/AccountCostSettings';
+import AccountPeriodManager from './components/AccountPeriodManager';
 import InfraCostSettings from './components/InfraCostSettings';
 import UsageInput from './components/UsageInput';
 import ResultCards from './components/ResultCards';
@@ -33,6 +34,14 @@ const mergeConfig = (config: Partial<AppConfig>): AppConfig => ({
     gpt54: { ...cloneDefaultConfig().modelPrices.gpt54, ...config.modelPrices?.gpt54 },
   },
   accountCosts: { ...cloneDefaultConfig().accountCosts, ...config.accountCosts },
+  accountPeriods: config.accountPeriods
+    ? config.accountPeriods.map((account, index) => ({
+        ...cloneDefaultConfig().accountPeriods[0],
+        accountId: `account_${String(index + 1).padStart(2, '0')}`,
+        accountName: '',
+        ...account,
+      }))
+    : cloneDefaultConfig().accountPeriods,
   infraCosts: { ...cloneDefaultConfig().infraCosts, ...config.infraCosts },
   usage: {
     ...cloneDefaultConfig().usage,
@@ -109,6 +118,14 @@ export default function App() {
               accountTotalCostCny={accountTotalCostCny}
               exchangeRate={config.basic.exchangeRate}
               onChange={(accountCosts) => setConfig((current) => ({ ...current, accountCosts }))}
+            />
+            <AccountPeriodManager
+              accounts={config.accountPeriods}
+              accountCosts={config.accountCosts}
+              calculations={result.accountPeriodSummary.calculations}
+              periodStart={result.accountPeriodSummary.periodStart}
+              periodEnd={result.accountPeriodSummary.periodEnd}
+              onAccountsChange={(accountPeriods) => setConfig((current) => ({ ...current, accountPeriods }))}
             />
             <InfraCostSettings
               infraCosts={config.infraCosts}

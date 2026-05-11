@@ -7,6 +7,13 @@ export const MODEL_LABELS: Record<ModelId, string> = {
   gpt54: 'GPT-5.4',
 };
 
+export const ACCOUNT_MODEL_LABELS = {
+  gpt55: 'GPT-5.5',
+  gpt54: 'GPT-5.4',
+  gpt53: 'GPT-5.3-Codex',
+  mixed: 'Mixed',
+} as const;
+
 export const STORAGE_KEY = 'token-profit-calculator-config-v1';
 
 export const defaultConfig: AppConfig = {
@@ -47,6 +54,23 @@ export const defaultConfig: AppConfig = {
     plusMonthlyFeeUsd: 20,
     rechargePerAccountUsd: 0,
   },
+  accountPeriods: [
+    {
+      accountId: 'account_01',
+      accountName: 'Plus-主账号',
+      accountType: 'Plus',
+      startDate: '2026-05-01',
+      endDate: '',
+      billingMode: 'monthly',
+      monthlyFeeUsd: 20,
+      rechargeUsd: 0,
+      assignedModel: 'gpt55',
+      usedInputTokens: 10_000_000,
+      usedCachedInputTokens: 2_000_000,
+      usedOutputTokens: 3_000_000,
+      usedCodexCredits: null,
+    },
+  ],
   infraCosts: {
     serverFeeCny: 100,
     databaseFeeCny: 0,
