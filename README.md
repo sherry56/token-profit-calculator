@@ -24,18 +24,22 @@ http://localhost:8080
 
 ## 从 GHCR 拉取镜像
 
-GitHub Actions 会在推送到 `main` 后构建镜像：
+GitHub Actions 会在推送到 `main` 后自动构建镜像：
 
 ```text
 ghcr.io/sherry56/token-profit-calculator:latest
 ```
 
-服务器运行：
+如果 GHCR package 已设置为 public，服务器可以直接拉取并运行：
 
 ```bash
-docker login ghcr.io
 docker pull ghcr.io/sherry56/token-profit-calculator:latest
 docker run -d --name token-profit-calculator -p 8080:80 ghcr.io/sherry56/token-profit-calculator:latest
 ```
 
-如果仓库或镜像保持私有，需要使用有 `read:packages` 权限的 GitHub token 登录 GHCR。
+如果拉取时提示未授权，说明 GHCR package 仍是 private，需要在 GitHub Packages 页面把 package visibility 改为 public，或使用有 `read:packages` 权限的 GitHub token 登录：
+
+```bash
+docker login ghcr.io
+docker pull ghcr.io/sherry56/token-profit-calculator:latest
+```
