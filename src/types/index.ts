@@ -8,8 +8,6 @@ export type TokenUnit = 'tokens' | 'k' | 'm';
 
 export type AccountType = 'Plus' | 'Pro' | 'Team' | 'API';
 
-export type AccountBillingMode = 'monthly' | 'daily';
-
 export type AssignedAccountModel = ModelId | 'gpt53' | 'mixed';
 
 export interface BasicSettings {
@@ -34,19 +32,17 @@ export interface ModelPrice {
 
 export interface AccountCosts {
   accountCount: number;
-  plusMonthlyFeeUsd: number;
-  rechargePerAccountUsd: number;
+  batchTotalCostCny: number;
 }
 
 export interface AccountPeriod {
   accountId: string;
   accountName: string;
+  batchName: string;
   accountType: AccountType;
   startDate: string;
   endDate: string;
-  billingMode: AccountBillingMode;
-  monthlyFeeUsd: number;
-  rechargeUsd: number;
+  accountCostCny: number;
   assignedModel: AssignedAccountModel;
   usedInputTokens: number;
   usedCachedInputTokens: number;

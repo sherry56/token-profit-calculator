@@ -4,7 +4,6 @@ import { formatCurrency } from '../utils/format';
 interface Props {
   accountCosts: AccountCosts;
   accountTotalCostCny: number;
-  exchangeRate: number;
   onChange: (accountCosts: AccountCosts) => void;
 }
 
@@ -16,32 +15,32 @@ const quotaRows = [
   ['GPT-5.3-Codex', '30-150', '10-60', '20-50'],
 ];
 
-export default function AccountCostSettings({ accountCosts, accountTotalCostCny, exchangeRate, onChange }: Props) {
+export default function AccountCostSettings({ accountCosts, accountTotalCostCny, onChange }: Props) {
+  const defaultAccountCostCny = (accountCosts.batchTotalCostCny || 0) / Math.max(1, accountCosts.accountCount || 1);
+
   const update = <K extends keyof AccountCosts>(key: K, value: AccountCosts[K]) => {
     onChange({ ...accountCosts, [key]: value });
   };
 
   return (
     <section className="panel p-4">
-      <h2 className="panel-title mb-4">Plus / Codex 账号成本默认值</h2>
-      <div className="grid gap-4 md:grid-cols-3">
+      <h2 className="panel-title mb-4">账号批量成本默认值</h2>
+      <div className="grid gap-4 md:grid-cols-2">
         <label className="space-y-1">
-          <span className="field-label">快速批量账号数量</span>
+          <span className="field-label">本批账号数量</span>
           <input className="input" type="number" step="1" value={accountCosts.accountCount} onChange={(event) => update('accountCount', toNumber(event.target.value))} />
         </label>
         <label className="space-y-1">
-          <span className="field-label">单个 Plus 账号月费 USD</span>
-          <input className="input" type="number" step="0.01" value={accountCosts.plusMonthlyFeeUsd} onChange={(event) => update('plusMonthlyFeeUsd', toNumber(event.target.value))} />
-        </label>
-        <label className="space-y-1">
-          <span className="field-label">单账号额外充值 USD</span>
-          <input className="input" type="number" step="0.01" value={accountCosts.rechargePerAccountUsd} onChange={(event) => update('rechargePerAccountUsd', toNumber(event.target.value))} />
+          <span className="field-label">本批总成本 CNY</span>
+          <input className="input" type="number" step="0.01" value={accountCosts.batchTotalCostCny} onChange={(event) => update('batchTotalCostCny', toNumber(event.target.value))} />
         </label>
       </div>
       <div className="mt-4 rounded-lg bg-slate-50 p-3 text-sm text-slate-700">
         当前账号列表总成本：<strong className="text-slate-950">{formatCurrency(accountTotalCostCny)}</strong>
-        <span className="ml-2 text-slate-500">汇率 {exchangeRate}</span>
-        <div className="mt-1 text-xs text-slate-500">这里保留为批量创建账号的默认值，最终成本以账号周期管理列表为准。</div>
+        <span className="ml-3 text-slate-500">默认均摊：{formatCurrency(defaultAccountCostCny)} / 账号</span>
+        <div className="mt-1 text-xs text-slate-500">
+          通常一批 5-10 个账号可直接填本批总成本；批量生成时会先均摊，最终仍以账号周期管理列表中的人民币成本为准。
+        </div>
       </div>
       <div className="mt-4 overflow-x-auto">
         <table className="min-w-full text-left text-sm">

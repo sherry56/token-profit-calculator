@@ -35,12 +35,30 @@ const mergeConfig = (config: Partial<AppConfig>): AppConfig => ({
   },
   accountCosts: { ...cloneDefaultConfig().accountCosts, ...config.accountCosts },
   accountPeriods: config.accountPeriods
-    ? config.accountPeriods.map((account, index) => ({
-        ...cloneDefaultConfig().accountPeriods[0],
-        accountId: `account_${String(index + 1).padStart(2, '0')}`,
-        accountName: '',
-        ...account,
-      }))
+    ? config.accountPeriods.map((account, index) => {
+        const legacyAccount = account as typeof account & {
+          accountCostCny?: number;
+          monthlyFeeUsd?: number;
+          rechargeUsd?: number;
+        };
+        const directCost = Number(legacyAccount.accountCostCny);
+        const legacyMonthlyFee = Number(legacyAccount.monthlyFeeUsd);
+        const legacyRecharge = Number(legacyAccount.rechargeUsd);
+        const exchangeRate = Number(config.basic?.exchangeRate) || cloneDefaultConfig().basic.exchangeRate;
+        const accountCostCny = Number.isFinite(directCost)
+          ? directCost
+          : ((Number.isFinite(legacyMonthlyFee) ? legacyMonthlyFee : 0) +
+              (Number.isFinite(legacyRecharge) ? legacyRecharge : 0)) *
+            exchangeRate;
+
+        return {
+          ...cloneDefaultConfig().accountPeriods[0],
+          accountId: `account_${String(index + 1).padStart(2, '0')}`,
+          accountName: '',
+          ...account,
+          accountCostCny,
+        };
+      })
     : cloneDefaultConfig().accountPeriods,
   infraCosts: { ...cloneDefaultConfig().infraCosts, ...config.infraCosts },
   usage: {
@@ -116,7 +134,6 @@ export default function App() {
             <AccountCostSettings
               accountCosts={config.accountCosts}
               accountTotalCostCny={accountTotalCostCny}
-              exchangeRate={config.basic.exchangeRate}
               onChange={(accountCosts) => setConfig((current) => ({ ...current, accountCosts }))}
             />
             <AccountPeriodManager

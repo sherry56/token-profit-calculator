@@ -82,7 +82,7 @@ export const calculateActiveDays = (account: AccountPeriod, periodStart: string,
 export const calculateActiveMonths = (account: AccountPeriod, periodStart: string, periodEnd: string): number => {
   const activeDays = calculateActiveDays(account, periodStart, periodEnd);
   if (activeDays <= 0) return 0;
-  return account.billingMode === 'monthly' ? Math.ceil(activeDays / 30) : activeDays / 30;
+  return activeDays / 30;
 };
 
 export const calculateAccountCost = (
@@ -93,8 +93,8 @@ export const calculateAccountCost = (
 ): number => {
   const activeDays = calculateActiveDays(account, periodStart, periodEnd);
   if (activeDays <= 0) return 0;
-  const feeMultiplier = account.billingMode === 'monthly' ? Math.ceil(activeDays / 30) : activeDays / 30;
-  return (feeMultiplier * positive(account.monthlyFeeUsd) + positive(account.rechargeUsd)) * positive(exchangeRate);
+  void exchangeRate;
+  return positive(account.accountCostCny);
 };
 
 const modelIdFromAssigned = (assignedModel: AccountPeriod['assignedModel']): ModelId | null => {
@@ -192,12 +192,7 @@ export const calculateAccountTotalCostCny = (config: AppConfig): number => {
   if ((config.accountPeriods ?? []).length > 0) {
     return calculateAccountPeriodSummary(config).accountTotalCostCny;
   }
-  const { accountCount, plusMonthlyFeeUsd, rechargePerAccountUsd } = config.accountCosts;
-  return (
-    positive(accountCount) *
-    (positive(plusMonthlyFeeUsd) + positive(rechargePerAccountUsd)) *
-    positive(config.basic.exchangeRate)
-  );
+  return positive(config.accountCosts.batchTotalCostCny);
 };
 
 export const calculateFixedCostCny = (config: AppConfig): number => {

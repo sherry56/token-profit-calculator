@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { Copy, Plus, Trash2 } from 'lucide-react';
 import type {
-  AccountBillingMode,
   AccountPeriod,
   AccountPeriodCalculation,
   AccountType,
@@ -21,7 +20,6 @@ interface Props {
 }
 
 const accountTypes: AccountType[] = ['Plus', 'Pro', 'Team', 'API'];
-const billingModes: AccountBillingMode[] = ['monthly', 'daily'];
 const assignedModels: AssignedAccountModel[] = ['gpt55', 'gpt54', 'gpt53', 'mixed'];
 
 const toNumber = (value: string) => (value === '' ? 0 : Number(value));
@@ -34,15 +32,33 @@ const nextAccountId = (accounts: AccountPeriod[], offset = 1) => {
   return `account_${String(maxId + offset).padStart(2, '0')}`;
 };
 
-const makeAccount = (accountId: string, index: number, accountCosts: AppConfig['accountCosts'], periodStart: string, periodEnd = ''): AccountPeriod => ({
+const nextBatchName = (accounts: AccountPeriod[]) => {
+  const maxId = accounts.reduce((max, account) => {
+    const match = account.batchName.match(/batch_(\d+)/);
+    return match ? Math.max(max, Number(match[1])) : max;
+  }, 0);
+  return `batch_${String(maxId + 1).padStart(2, '0')}`;
+};
+
+const getDefaultAccountCostCny = (accountCosts: AppConfig['accountCosts'], count = accountCosts.accountCount) =>
+  (accountCosts.batchTotalCostCny || 0) / Math.max(1, count || 1);
+
+const makeAccount = (
+  accountId: string,
+  index: number,
+  accountCosts: AppConfig['accountCosts'],
+  periodStart: string,
+  periodEnd = '',
+  batchName = `batch_${String(Math.floor(index / Math.max(1, accountCosts.accountCount || 1)) + 1).padStart(2, '0')}`,
+  accountCostCny = getDefaultAccountCostCny(accountCosts),
+): AccountPeriod => ({
   accountId,
   accountName: `Plus-${String(index + 1).padStart(2, '0')}`,
+  batchName,
   accountType: 'Plus',
   startDate: periodStart,
   endDate: periodEnd,
-  billingMode: 'monthly',
-  monthlyFeeUsd: accountCosts.plusMonthlyFeeUsd || 20,
-  rechargeUsd: accountCosts.rechargePerAccountUsd || 0,
+  accountCostCny,
   assignedModel: 'gpt55',
   usedInputTokens: 0,
   usedCachedInputTokens: 0,
@@ -65,7 +81,10 @@ export default function AccountPeriodManager({
   };
 
   const addAccount = () => {
-    onAccountsChange([...accounts, makeAccount(nextAccountId(accounts), accounts.length, accountCosts, periodStart)]);
+    onAccountsChange([
+      ...accounts,
+      makeAccount(nextAccountId(accounts), accounts.length, accountCosts, periodStart, '', nextBatchName(accounts)),
+    ]);
   };
 
   const copyAccount = (index: number) => {
@@ -86,8 +105,10 @@ export default function AccountPeriodManager({
 
   const batchCreate = () => {
     const count = Math.max(0, Math.floor(toNumber(batchCount)));
+    const batchName = nextBatchName(accounts);
+    const accountCostCny = getDefaultAccountCostCny(accountCosts, count);
     const created = Array.from({ length: count }, (_, index) =>
-      makeAccount(nextAccountId(accounts, index + 1), accounts.length + index, accountCosts, periodStart),
+      makeAccount(nextAccountId(accounts, index + 1), accounts.length + index, accountCosts, periodStart, '', batchName, accountCostCny),
     );
     onAccountsChange([...accounts, ...created]);
   };
@@ -132,7 +153,7 @@ export default function AccountPeriodManager({
       </div>
 
       <p className="mb-4 rounded-lg border border-sky-200 bg-sky-50 p-3 text-sm text-sky-900">
-        不同账号的使用周期可能不同。系统会根据账号开始日期、结束日期与当前统计周期的重叠天数计算本周期账号成本。按月模式适合 Plus 订阅账号，按天模式适合更精细的内部摊销。
+        账号成本统一按人民币录入。批量生成会把本批总成本 CNY 均摊到本批账号，每个账号仍可单独修改成本和流量；未覆盖当前统计周期的账号不会计入本周期成本。
       </p>
 
       <div className="overflow-x-auto">
@@ -141,15 +162,13 @@ export default function AccountPeriodManager({
             <tr>
               {[
                 '账号名称',
+                '批次',
                 '账号类型',
                 '开始日期',
                 '结束日期',
-                '计费',
                 '使用天数',
                 '使用月数',
-                '月费 USD',
-                '充值 USD',
-                '本周期账号成本 CNY',
+                '账号成本 CNY',
                 '主要模型',
                 'input tokens',
                 'cached input',
@@ -177,6 +196,9 @@ export default function AccountPeriodManager({
                     <div className="mt-1 text-xs text-slate-400">{account.accountId}</div>
                   </td>
                   <td className="px-3 py-2">
+                    <input className="input min-w-32" value={account.batchName} onChange={(event) => updateAccount(index, 'batchName', event.target.value)} />
+                  </td>
+                  <td className="px-3 py-2">
                     <select className="input min-w-24" value={account.accountType} onChange={(event) => updateAccount(index, 'accountType', event.target.value as AccountType)}>
                       {accountTypes.map((type) => (
                         <option key={type} value={type}>
@@ -192,24 +214,12 @@ export default function AccountPeriodManager({
                     <input className="input min-w-36" type="date" value={account.endDate} onChange={(event) => updateAccount(index, 'endDate', event.target.value)} />
                     {calculation?.hasDateError && <div className="mt-1 text-xs text-rose-600">结束日期早于开始日期</div>}
                   </td>
-                  <td className="px-3 py-2">
-                    <select className="input min-w-24" value={account.billingMode} onChange={(event) => updateAccount(index, 'billingMode', event.target.value as AccountBillingMode)}>
-                      {billingModes.map((mode) => (
-                        <option key={mode} value={mode}>
-                          {mode === 'monthly' ? '按月' : '按天'}
-                        </option>
-                      ))}
-                    </select>
-                  </td>
                   <td className="px-3 py-2">{formatNumber(calculation?.activeDays ?? 0)}</td>
                   <td className="px-3 py-2">{formatNumber(calculation?.activeMonths ?? 0, 2)}</td>
                   <td className="px-3 py-2">
-                    <input className="input min-w-28" type="number" step="0.01" value={account.monthlyFeeUsd} onChange={(event) => updateAccount(index, 'monthlyFeeUsd', toNumber(event.target.value))} />
+                    <input className="input min-w-28" type="number" step="0.01" value={account.accountCostCny} onChange={(event) => updateAccount(index, 'accountCostCny', toNumber(event.target.value))} />
+                    <div className="mt-1 text-xs text-slate-500">计入：{formatCurrency(calculation?.accountCostCny)}</div>
                   </td>
-                  <td className="px-3 py-2">
-                    <input className="input min-w-28" type="number" step="0.01" value={account.rechargeUsd} onChange={(event) => updateAccount(index, 'rechargeUsd', toNumber(event.target.value))} />
-                  </td>
-                  <td className="px-3 py-2 font-semibold">{formatCurrency(calculation?.accountCostCny)}</td>
                   <td className="px-3 py-2">
                     <select className="input min-w-36" value={account.assignedModel} onChange={(event) => updateAccount(index, 'assignedModel', event.target.value as AssignedAccountModel)}>
                       {assignedModels.map((model) => (
